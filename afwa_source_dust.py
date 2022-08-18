@@ -1,9 +1,8 @@
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 
-def source_dust(nx,ny,ustar, massfrac,erod, ilwi, gravsm, volsm, airden, drylimit,xland):
+def afwa_source_dust(nx, ny, ustar, massfrac, erod, ilwi, gravsm, volsm, airden, drylimit,xland):
   reff_salt=np.array([0.71e-6,1.37e-6,2.63e-6,5.00e-6,9.50e-6,18.1e-6,34.5e-6,65.5e-6,125.0e-6])
   den_salt=np.array([2500.,2650.,2650.,2650.,2650.,2650.,2650.,2650.,2650.])
   spoint=np.array([0,1,1,1,1,1,2,2,2])#  ! 0 Clay, 1 Silt, 2 Sand
@@ -104,7 +103,7 @@ def source_dust(nx,ny,ustar, massfrac,erod, ilwi, gravsm, volsm, airden, drylimi
       #print u_ts0.shape
       #print volsm.shape
       #print drylimit.shape
-      #exit()
+
       salt=np.zeros(shape=(ny,nx))
       for j in np.arange(0,ny):
         for i in np.arange(0,nx):
@@ -142,46 +141,4 @@ def source_dust(nx,ny,ustar, massfrac,erod, ilwi, gravsm, volsm, airden, drylimi
           else:
             u_ts0[n,j,i]=0
 
-
-  return emit,u_ts,u_ts0   #np.sum(emit,axis=0)  # (kg m^-2 s^-1)
-  
-
-  '''
-   # Loop over saltation bins
-  for n in np.arange(0,smx):           
-    dsrc = emit*distr_dust(n)*dt1  ! (kg m^-2) per dt1
-  IF (dsrc < 0.0) dsrc = 0.0
-  '''
-
-
-def plot_cities(ash_map):
-    points=['Jeddah ',' Riyadh','Dammam '," Sana'a"," Muskat"," Mecca"," Abu Dhabi"," Doha"," Ankara"," Damascus","Beirut "," Amman","Jerusalem "," Tehran"," Baghdad"," Kuwait City"," Cairo"," Manama"]
-    align={'Jeddah ':"right",' Riyadh':'left','Dammam ':"right",'Yanbu ':"right",'Rabigh ':"right"," Sana'a":'left'," Muskat":"left"," Mecca":"left"," Abu Dhabi":"left"," Medina":"left"," Doha":"left"," Ankara":"left"," Damascus":"left","Beirut ":"right"," Amman":"left","Jerusalem ":"right"," Tehran":"left"," Baghdad":"left"," Kuwait City":"left"," Cairo":"left"," Manama":"left"}
-    point_lons=[39.222167,46.891028,49.983083,44.168,58.338,39.831,54.382,51.542,32.863,36.293,35.496,35.923,35.209,51.388,44.358,47.977,31.238,50.582]
-    point_lats=[21.416222,24.55266667,26.246639,15.42,23.582,21.427,24.480,25.286,39.938,33.511,33.892,31.972,31.763,35.697,33.330,29.378,30.047,26.221]
-    MARKER_SIZE=4
-    TEXT_SIZE=12
-
-    x, y = ash_map(point_lons,point_lats)
-    ash_map.plot(x, y,'o',markersize=MARKER_SIZE,markeredgewidth=1,markeredgecolor='k',markerfacecolor='none',zorder=11)
-
-    k=0
-    for s in points:
-        x,y=ash_map(point_lons[k],point_lats[k])
-        plt.text(x,y,s,fontsize=TEXT_SIZE,style='italic',ha=align.get(s),va='center',color='k',zorder=11)
-        #axes.text(x,y,s,fontsize=TEXT_SIZE,style='italic',ha=align.get(s),va='center',color='k',zorder=11)
-        k=k+1
-
-
-def decorateMap(ash_map):
-  ash_map.drawcountries(linewidth=0.25)
-  ash_map.drawcoastlines(linewidth=0.25)
-  ash_map.drawmapboundary(linewidth=0.25)
-  #ash_map.drawrivers()
-
-  # draw parallels.
-  parallels = np.arange(0.,90,10.)
-  ash_map.drawparallels(parallels,labels=[1,0,0,0],fontsize=12,linewidth=0.2)
-  # draw meridians
-  meridians = np.arange(0.,180.,10.)
-  ash_map.drawmeridians(meridians,labels=[0,0,0,1],fontsize=12,linewidth=0.2)
+  return emit,u_ts,u_ts0

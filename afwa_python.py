@@ -62,7 +62,7 @@ for time_idx in range(1,len(times),1):
 	#cs=ash_map.contourf(x,y,emissions,cmap=ncview_colormap_short, norm=ai_norm)
 	#OR cs=ash_map.pcolormesh(x,y,emissions,norm=colors.LogNorm(1.0e-7, vmax=0.01))
 
-	cbar = fig.colorbar(cs,orientation='horizontal')
+	cbar = fig.colorbar(cs,orientation='horizontal',extend='max')
 	cbar.set_label('GOCART-AFWA Dust emissions, '+units)#,fontsize=CB_LABEL_TEXT_SIZE)
 
 	plt.savefig("afwa_flux_"+str(time_idx)+".png",bbox_inches="tight")

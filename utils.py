@@ -47,11 +47,12 @@ for c in np.linspace(0,1,c_map_short.N):
     colorlist.append(str(clr)) # create a list of these colors
 
 ncview_colormap_short = LinearSegmentedColormap.from_list('cmap_name', colorlist, N=10)
+ncview_colormap_short.set_over("black")
 ###############
 
 from matplotlib import cm
-ai_norm = colors.BoundaryNorm(np.logspace(-12.0, -7.0, num=11), ncview_colormap_short.N, clip=True)
-uts_norm = colors.BoundaryNorm(np.logspace(-1.0, 1.1, num=21), cm.get_cmap('rainbow', 21).N, clip=True)
+ai_norm = colors.BoundaryNorm(np.logspace(-12.0, -7.0, num=11), ncview_colormap_short.N, clip=False)
+uts_norm = colors.BoundaryNorm(np.logspace(-1.0, 1.1, num=21), cm.get_cmap('rainbow', 21).N, clip=False)
 
 
 

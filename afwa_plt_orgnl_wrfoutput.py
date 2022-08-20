@@ -4,7 +4,6 @@ import os
 from mpl_toolkits.basemap import Basemap
 from datetime import datetime
 
-wrf_out_file="/wrfout_d01_2016-06-24_00:00:00_gocart"
 wrf_out_file="/wrfout_d01_2016-06-24_00:00:00_afwa"
 print wrf_dir+wrf_out_file
 nc_fid = nc.MFDataset(wrf_dir+wrf_out_file)
@@ -19,7 +18,7 @@ for time_idx in range(1,len(times),1):
 	####################################################################################
 	####################################################################################
 	'''
-	#this works only for AFWA-GOCART, when wrf_out_file="/wrfout_d01_2016-06-24_00:00:00_awfa"
+	#this works only for AFWA wrfoutput, when wrf_out_file="/wrfout_d01_2016-06-24_00:00:00_awfa"
 	#plot from WRFOUTPUT	
 	k=9
 	fig, axs = plt.subplots(1, k,figsize=(k*5,5))
@@ -57,10 +56,10 @@ for time_idx in range(1,len(times),1):
 
 	plt.title(date_time_obj.strftime("%d %B, %H:%M %p")+"\n Total emission flux: "+"{:0.1f}".format(total_emission_flux)+" ($kg\ sec^{-1}$)")
 
-	ai_norm = colors.BoundaryNorm(np.logspace(-12.0, -7.0, num=11), ncview_colormap_short.N, clip=True)
+	ai_norm = colors.BoundaryNorm(np.logspace(-12.0, -7.0, num=11), ncview_colormap_short.N, clip=False)
 	cs=ash_map.pcolormesh(x,y,emissions,cmap=ncview_colormap_short, norm=ai_norm)
 
-	cbar = fig.colorbar(cs,orientation='horizontal')
+	cbar = fig.colorbar(cs,orientation='horizontal',extend='max')
 	cbar.set_label('Original Dust emissions, '+units)#,fontsize=CB_LABEL_TEXT_SIZE)
 
 	plt.savefig("ornlg_"+str(time_idx)+".png",bbox_inches="tight")

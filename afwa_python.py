@@ -18,14 +18,21 @@ print wrf_dir+wrf_out_file
 nc_fid = nc.MFDataset(wrf_dir+wrf_out_file)
 times =nc_fid.variables['Times'][:]
 xland=nc_fid.variables['XLAND'][0,:]
+ustar=nc_fid.variables['UST'][:]
+smois = nc_fid.variables["SMOIS"][:, 0, :]  # soil moisture of first level
+isltyp = nc_fid.variables["ISLTYP"][:]
 
-drylimit=nc_fid.variables['TOT_DUST'][:,19,:]
-volsm=nc_fid.variables['TOT_DUST'][:,20,:]
-erodtot=nc_fid.variables['TOT_DUST'][:,21,:]
-ustar=nc_fid.variables['TOT_DUST'][:,22,:]
-ilwi=nc_fid.variables['TOT_DUST'][:,23,:]
+#volsm=nc_fid.variables['TOT_DUST'][:,20,:]
+#CHECK
 gravsm=nc_fid.variables['TOT_DUST'][:,24,:]
+
+#AIR DENsity can not
 airden=nc_fid.variables['TOT_DUST'][:,25,:]
+#airden = 1.0 / nc_fid.variables["ALT"][:, 0, :]
+
+
+erodtot=nc_fid.variables['TOT_DUST'][:,21,:]
+ilwi=nc_fid.variables['TOT_DUST'][:,23,:]
 
 massfrac=np.zeros(shape=(3,ny,nx))  #MASSFRAC  Fraction of mass in each of 3 soil classes    (clay, silt, sand)
 massfrac[0][:]=nc_fid.variables['CLAYFRAC'][0,:]
@@ -53,7 +60,7 @@ for time_idx in range(1,len(times),1):
 
 	date_time_obj = datetime.strptime(''.join(times[time_idx]), '%Y-%m-%d_%H:%M:%S')
 	
-	emissions,u_ts,u_tres=afwa_source_dust(nx,ny,ustar[time_idx], massfrac,erodtot[time_idx], ilwi[time_idx], gravsm[time_idx], volsm[time_idx], airden[time_idx], drylimit[time_idx],xland)
+	emissions,u_ts,u_tres=afwa_source_dust(nx,ny,ustar[time_idx], massfrac,erodtot[time_idx], ilwi[time_idx], isltyp[time_idx],gravsm[time_idx], smois[time_idx], airden[time_idx],xland)
 	
 	total_emission_flux=np.sum(surface*emissions)
 	plt.title(date_time_obj.strftime("%d %B, %H:%M %p")+"\n Total emission flux: "+"{:0.1f}".format(total_emission_flux)+" ($kg\ sec^{-1}$)")

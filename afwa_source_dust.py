@@ -2,11 +2,12 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 
-def afwa_source_dust(nx, ny, ustar, massfrac, erod, ilwi, gravsm, volsm, airden, drylimit,xland):
+def afwa_source_dust(nx, ny, ustar, massfrac, erod, ilwi, isltyp, gravsm, smois, airden,xland):
   reff_salt=np.array([0.71e-6,1.37e-6,2.63e-6,5.00e-6,9.50e-6,18.1e-6,34.5e-6,65.5e-6,125.0e-6])
   den_salt=np.array([2500.,2650.,2650.,2650.,2650.,2650.,2650.,2650.,2650.])
   spoint=np.array([0,1,1,1,1,1,2,2,2])#  ! 0 Clay, 1 Silt, 2 Sand
   frac_salt=np.array([1.0,0.2,0.2,0.2,0.2,0.2,0.333,0.333,0.333])
+  porosity=([0.339, 0.421, 0.434, 0.476, 0.476, 0.439, 0.404, 0.464, 0.465, 0.406, 0.468, 0.468, 0.439, 1.000, 0.200, 0.421, 0.468, 0.200,0.339])
   
   #distr_dust=np.array([1.074e-1,1.012e-1,2.078e-1,4.817e-1,1.019e-1]) #sum(distr_dust)=1
 
@@ -15,12 +16,70 @@ def afwa_source_dust(nx, ny, ustar, massfrac, erod, ilwi, gravsm, volsm, airden,
   g = g0*1.0E2                          # (cm s^-2)  
   smx=9
 
-  alpha=0.5
-  gamma=1.0
-  smois_opt=0
+  alpha=0.5 # "AFWA Dust global tuning constant"    "m^-1"
+  gamma=1.0 # "AFWA Dust erodibility exponential tuning const" 
+  smtune=1.0 #"AFWA Dust soil moisture tuning constant"
+  ustune=1.0 # "AFWA Dust friction velocity tuning constant"    ""
 
-  #smtune=1.0
-  #volsm=volsm*smtune
+  volsm=np.zeros(shape=(ny,nx))
+
+#CHECK
+  #ngravsm=np.zeros(shape=(ny,nx))
+
+  '''
+  for j in np.arange(0,ny):
+    for i in np.arange(0,nx):
+      if(xland[j,i]<1.5):
+        # Calculate volumetric and gravimetric soil moisture.            
+        volsm[j, i]=max(smois[j, i]*smtune,0.0)
+        ngravsm[j, i]=100.0*volsm[j, i]/((1.0-porosity[isltyp[j, i]])*(2.65*(1-massfrac[0,j,i])+2.50*massfrac[0,j,i]))
+
+        if (porosity[isltyp[j, i] == 1.0):
+          print "XXXXXX"
+
+
+  print np.mean(nvolsm)
+  print np.mean(volsm)
+
+  print np.mean(ngravsm)
+  print np.mean(gravsm)
+  print "\n"
+  '''
+
+  # Choose an LSM option and drylimit option.
+  # Drylimit calculations based on look-up table in
+  # Clapp and Hornberger (1978) for RUC and PXLSM and
+  # Cosby et al. (1984) for Noah LSM.
+
+  smois_opt = 0
+  drylimit=np.zeros(shape=(ny,nx))
+  '''
+  dust_smois=0  
+  if dust_smois == 1:
+   sfc_select: SELECT CASE(config_flags%sf_surface_physics)
+      CASE ( RUCLSMSCHEME, PXLSMSCHEME )
+         drylimit(1,1) =0.035*(13.52*clay(i,j)+3.53)**2.68
+         smois_opt = 1
+      CASE ( LSMSCHEME )
+         drylimit(1,1) =0.0756*(15.127*clay(i,j)+3.09)**2.3211
+         smois_opt = 1
+      CASE DEFAULT
+
+         ! Don't currently support volumetric soil moisture
+         ! for this scheme, use drylimit based on gravimetric 
+
+         drylimit(1,1)=14.0*clay(i,j)*clay(i,j)+17.0*clay(i,j)
+   END SELECT sfc_select
+  else:
+    # use drylimit based on gravimetric soil moisture
+  '''
+  drylimit=14.0*massfrac[0]*massfrac[0]+17.0*massfrac[0]
+
+
+  # Friction velocity tuning constant (Note: recommend 0.7 for PXLSM,
+  # else use 1.0.  This was created due to make the scheme compatible
+  # with the much stronger friction velocities coming out of PXLSM).
+  ustar=ustar * ustune
 
   # Global tuning constant, alpha.  
   # Sandblasting mass efficiency, beta.
@@ -88,26 +147,27 @@ def afwa_source_dust(nx, ny, ustar, massfrac, erod, ilwi, gravsm, volsm, airden,
 
       u_ts0[n] = 0.0013*(np.sqrt(den*g*diam/rhoa) * np.sqrt(1.0+0.006/(den*g*diam**2.5))) / (np.sqrt(1.928*(1331.0*diam**1.56+0.38)**0.092-1.0)) 
 
-      # Friction velocity threshold correction function based on physical
-      # properties related to moisture tension. Soil moisture greater than
-      # dry limit serves to increase threshold friction velocity (making
-      # it more difficult to loft dust). When soil moisture has not reached
-      # dry limit, treat as dry (no correction to threshold friction velocity). GAC
-
-      # Calculate threshold friction velocity. If volumetric (gravimetric)
-      # water content is less than the drylimit, then the threshold friction
-      # velocity (u_ts) will be equal to the dry threshold friction velocity
-      # (u_ts0). EDH
-
-
-      #print u_ts0.shape
-      #print volsm.shape
-      #print drylimit.shape
-
       salt=np.zeros(shape=(ny,nx))
       for j in np.arange(0,ny):
         for i in np.arange(0,nx):
           if(xland[j,i]<1.5):
+
+            # Calculate volumetric and gravimetric soil moisture.            
+            volsm[j, i]=max(smois[j, i]*smtune,0.0)
+            #gravsm[j, i]=100.0*volsm[j, i]/((1.0-porosity[isltyp[j, i]])*(2.65*(1-massfrac[0,j,i])+2.50*massfrac[0,j,i]))
+
+
+            # Friction velocity threshold correction function based on physical
+            # properties related to moisture tension. Soil moisture greater than
+            # dry limit serves to increase threshold friction velocity (making
+            # it more difficult to loft dust). When soil moisture has not reached
+            # dry limit, treat as dry (no correction to threshold friction velocity). GAC
+
+            # Calculate threshold friction velocity. If volumetric (gravimetric)
+            # water content is less than the drylimit, then the threshold friction
+            # velocity (u_ts) will be equal to the dry threshold friction velocity
+            # (u_ts0). EDH
+
             if (smois_opt==1):
               if (100.0*volsm[j,i] > drylimit[j,i]):
                 u_ts[n,j,i] = max(0.0,u_ts0[n,j,i]*np.sqrt(1.0+1.21*(100.0*volsm[j,i]-drylimit[j,i])**0.68))

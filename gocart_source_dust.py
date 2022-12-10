@@ -6,12 +6,13 @@ def gocart_source_dust(nx, ny, w10m, isltyp, smois, erod, airden, xland):
     den_dust = np.array([2500.0, 2650.0, 2650.0, 2650.0, 2650.0])
     reff_dust = np.array([0.73e-6, 1.4e-6, 2.4e-6, 4.5e-6, 8.0e-6])
     ipoint = np.array([2, 1, 1, 1, 1])
-    frac_s = np.array([0.1, 0.25, 0.25, 0.25, 0.25])
+    frac_s = np.array([0.15,0.1,0.25,0.4,0.1])
     porosity=([0.339, 0.421, 0.434, 0.476, 0.476, 0.439, 0.404, 0.464, 0.465, 0.406, 0.468, 0.468, 0.439, 1.000, 0.200, 0.421, 0.468, 0.200,0.339])
 
     g = 9.8 * 1.0e2  # (cm s^-2)
     nmx = 5
     ch_dust = 0.8e-9
+    C_factor=0.5
 
     # Calculate total dust emission of sand sized particles.
     # Begin by calculating DRY threshold friction velocity (u_ts0).  Next adjust
@@ -53,7 +54,7 @@ def gocart_source_dust(nx, ny, w10m, isltyp, smois, erod, airden, xland):
                     srce = frac_s[n] * erod[m, j, i]  # (kg s^2 m^-5)
                     # if (ilwi[j,i]==1.0):
                     # (kg s^2 m^-5)*(m^3 s^-3) = (kg/m2/sec)
-                    dsrc = ch_dust*srce*w10m[j,i]**2*(w10m[j,i] - u_ts[n,j,i])
+                    dsrc = C_factor*ch_dust*srce*w10m[j,i]**2*(w10m[j,i] - u_ts[n,j,i])
 
                     dsrc = max(0.0, dsrc)  # (kg m^-2 sec-1)
 

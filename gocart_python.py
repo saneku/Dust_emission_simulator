@@ -10,7 +10,8 @@ from gocart_source_dust import gocart_source_dust
 from mpl_toolkits.basemap import Basemap
 from datetime import datetime
 
-wrf_out_file = "/wrfout_d01_2016-06-24_00:00:00_gocart"
+wrf_dir="./"
+wrf_out_file = "wrfout_d01_2016-06-24_00:00:00_gocart"
 print(wrf_dir + wrf_out_file)
 nc_fid = nc.MFDataset(wrf_dir + wrf_out_file)
 times = nc_fid.variables["Times"][:]
@@ -26,37 +27,30 @@ smois = nc_fid.variables["SMOIS"][:, 0, :]  # soil moisture of first level
 erod = nc_fid.variables["EROD"][:]
 nc_fid.close()
 
-emissions = np.zeros(shape=(ny, nx))
+flux = np.zeros(shape=(ny, nx))
 
 print("processing " + wrf_dir + wrf_out_file)
 for time_idx in range(1, len(times), 1):
-    print("".join(times[time_idx]))
-    # time_labels.append(''.join(times[time_idx]))
+    
+    flux, u_ts, u_tres = gocart_source_dust(nx, ny, w10m[time_idx], isltyp[time_idx], smois[time_idx], erod[time_idx], airden[time_idx], xland)
+	#flux (kg/m2/sec)
+    total_emission_flux = np.sum(surface*flux) #(kg/sec)
 
     fig = plt.figure(figsize=(12, 12))
     ash_map = Basemap(**basemap_params)
     x, y = ash_map(xlon, xlat)
-
     decorateMap(ash_map)
-    # plot_cities(ash_map)
 
     date_time_obj = datetime.strptime("".join(times[time_idx]), "%Y-%m-%d_%H:%M:%S")
+    plt.title(date_time_obj.strftime("%d %B, %H:%M %p") + "\n Integrated Instant. emission flux: " + "{:0.1f}".format(total_emission_flux) + " ($kg\ sec^{-1}$)")
 
-    emissions, u_ts, u_tres = gocart_source_dust(nx, ny, w10m[time_idx], isltyp[time_idx], smois[time_idx], erod[time_idx], airden[time_idx], xland)
+    cs = ash_map.pcolormesh(x, y, flux, cmap=ncview_colormap_short, norm=ai_norm)
+    cbar = fig.colorbar(cs, orientation="horizontal",extend='max',format='%.0e')
+    cbar.set_label("Instant. GOCART Dust emissions, " + units)
 
-    total_emission_flux = np.sum(surface * emissions)
-    plt.title(date_time_obj.strftime("%d %B, %H:%M %p") + "\n Total emission flux: " + "{:0.1f}".format(total_emission_flux) + " ($kg\ sec^{-1}$)")
+    plt.savefig("gocart_inst_flux_" + str(time_idx) + ".png", bbox_inches="tight")
 
-    cs = ash_map.pcolormesh(x, y, emissions, cmap=ncview_colormap_short, norm=ai_norm)
-    # cs=ash_map.contourf(x,y,emissions,cmap=ncview_colormap_short, norm=ai_norm)
-    # OR cs=ash_map.pcolormesh(x,y,emissions,norm=colors.LogNorm(1.0e-7, vmax=0.01))
-
-    cbar = fig.colorbar(cs, orientation="horizontal",extend='max')
-    cbar.set_label("GOCART Dust emissions, " + units)  # ,fontsize=CB_LABEL_TEXT_SIZE)
-
-    plt.savefig("gocart_flux_" + str(time_idx) + ".png", bbox_inches="tight")
-
-    ####################################################################################
+    print("".join(times[time_idx]),total_emission_flux)
     ####################################################################################
 
     """

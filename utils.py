@@ -8,7 +8,7 @@ basemap_params = dict(projection='cyl', llcrnrlat=8.0, urcrnrlat=45.5,llcrnrlon=
 
 wrf_input_file='wrfinput_d01'
 wrf_bdy_file='wrfbdy_d01'
-wrf_dir='/scratch/ukhova/WRF/run_airquality_oneMonth_100km'
+wrf_dir='/scratch/ukhova/run_airquality_oneMonth_100km'
 
 
 wrfinput=Dataset(wrf_dir+"/"+wrf_input_file,'r')

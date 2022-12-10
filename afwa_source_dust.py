@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 
-def afwa_source_dust(nx, ny, ustar, massfrac, erod, ilwi, isltyp, gravsm, smois, airden,xland):
+def afwa_source_dust(nx, ny, ustar, massfrac, erod,isltyp, smois, airden,xland,znt,snowh):
   reff_salt=np.array([0.71e-6,1.37e-6,2.63e-6,5.00e-6,9.50e-6,18.1e-6,34.5e-6,65.5e-6,125.0e-6])
   den_salt=np.array([2500.,2650.,2650.,2650.,2650.,2650.,2650.,2650.,2650.])
   spoint=np.array([0,1,1,1,1,1,2,2,2])#  ! 0 Clay, 1 Silt, 2 Sand
@@ -21,30 +21,9 @@ def afwa_source_dust(nx, ny, ustar, massfrac, erod, ilwi, isltyp, gravsm, smois,
   smtune=1.0 #"AFWA Dust soil moisture tuning constant"
   ustune=1.0 # "AFWA Dust friction velocity tuning constant"    ""
 
+  erod=np.sum(erod,axis=0)
   volsm=np.zeros(shape=(ny,nx))
-
-#CHECK
-  #ngravsm=np.zeros(shape=(ny,nx))
-
-  '''
-  for j in np.arange(0,ny):
-    for i in np.arange(0,nx):
-      if(xland[j,i]<1.5):
-        # Calculate volumetric and gravimetric soil moisture.            
-        volsm[j, i]=max(smois[j, i]*smtune,0.0)
-        ngravsm[j, i]=100.0*volsm[j, i]/((1.0-porosity[isltyp[j, i]])*(2.65*(1-massfrac[0,j,i])+2.50*massfrac[0,j,i]))
-
-        if (porosity[isltyp[j, i] == 1.0):
-          print "XXXXXX"
-
-
-  print np.mean(nvolsm)
-  print np.mean(volsm)
-
-  print np.mean(ngravsm)
-  print np.mean(gravsm)
-  print "\n"
-  '''
+  gravsm=np.zeros(shape=(ny,nx))
 
   # Choose an LSM option and drylimit option.
   # Drylimit calculations based on look-up table in
@@ -133,6 +112,7 @@ def afwa_source_dust(nx, ny, ustar, massfrac, erod, ilwi, isltyp, gravsm, smois,
   emit=np.zeros(shape=(ny,nx))
   u_ts0=np.zeros(shape=(smx,ny,nx))
   u_ts=np.zeros(shape=(smx,ny,nx))
+  ilwi=np.zeros(shape=(ny,nx))
 
   for n in np.arange(0,smx):            # Loop over saltation bins
       den = den_salt[n]*1.0e-3          # (g cm^-3)
@@ -150,55 +130,66 @@ def afwa_source_dust(nx, ny, ustar, massfrac, erod, ilwi, isltyp, gravsm, smois,
       salt=np.zeros(shape=(ny,nx))
       for j in np.arange(0,ny):
         for i in np.arange(0,nx):
+
           if(xland[j,i]<1.5):
+            ilwi[j,i]=1.0
 
-            # Calculate volumetric and gravimetric soil moisture.            
-            volsm[j, i]=max(smois[j, i]*smtune,0.0)
-            #gravsm[j, i]=100.0*volsm[j, i]/((1.0-porosity[isltyp[j, i]])*(2.65*(1-massfrac[0,j,i])+2.50*massfrac[0,j,i]))
+          if(znt[j,i] > 0.2):
+            ilwi[j,i]=0.0
+
+          if(isltyp[j,i]==14 or isltyp[j,i]==15 or isltyp[j,i]==17):
+            ilwi[j,i]=0.0
+
+          if(snowh[j,i] > 0.01):
+            ilwi[j,i]=0.0
+
+          # Calculate volumetric and gravimetric soil moisture.            
+          volsm[j, i]=max(smois[j, i]*smtune,0.0)
+          gravsm[j,i]=100.0*volsm[j, i]/((1.0-porosity[isltyp[j, i]])*(2.65*(1-massfrac[0,j,i])+2.50*massfrac[0,j,i]))
 
 
-            # Friction velocity threshold correction function based on physical
-            # properties related to moisture tension. Soil moisture greater than
-            # dry limit serves to increase threshold friction velocity (making
-            # it more difficult to loft dust). When soil moisture has not reached
-            # dry limit, treat as dry (no correction to threshold friction velocity). GAC
+          # Friction velocity threshold correction function based on physical
+          # properties related to moisture tension. Soil moisture greater than
+          # dry limit serves to increase threshold friction velocity (making
+          # it more difficult to loft dust). When soil moisture has not reached
+          # dry limit, treat as dry (no correction to threshold friction velocity). GAC
 
-            # Calculate threshold friction velocity. If volumetric (gravimetric)
-            # water content is less than the drylimit, then the threshold friction
-            # velocity (u_ts) will be equal to the dry threshold friction velocity
-            # (u_ts0). EDH
+          # Calculate threshold friction velocity. If volumetric (gravimetric)
+          # water content is less than the drylimit, then the threshold friction
+          # velocity (u_ts) will be equal to the dry threshold friction velocity
+          # (u_ts0). EDH
 
-            if (smois_opt==1):
-              if (100.0*volsm[j,i] > drylimit[j,i]):
-                u_ts[n,j,i] = max(0.0,u_ts0[n,j,i]*np.sqrt(1.0+1.21*(100.0*volsm[j,i]-drylimit[j,i])**0.68))
-              else:
-                u_ts[n,j,i] = u_ts0[n,j,i]
+          if (smois_opt==1):
+            if (100.0*volsm[j,i] > drylimit[j,i]):
+              u_ts[n,j,i] = max(0.0,u_ts0[n,j,i]*np.sqrt(1.0+1.21*(100.0*volsm[j,i]-drylimit[j,i])**0.68))
             else:
-              if (gravsm[j,i] > drylimit[j,i]):
-                u_ts[n,j,i] = max(0.0,u_ts0[n,j,i]*np.sqrt(1.0+1.21*(gravsm[j,i]-drylimit[j,i])**0.68))
-              else:
-                u_ts[n,j,i] = u_ts0[n,j,i]
-
-            # Saltation flux (kg m^-1 s^-1) from MB95
-            # ds_rel is the relative surface area distribution
-
-            if ((ustar[j,i] > u_ts[n,j,i]) and (erod[j,i] > 0.0) and (ilwi[j,i]==1.0)):
-              salt[j,i] = cmb*ds_rel[n,j,i]*(airden[j,i]/g0)*(ustar[j,i]**3)*(1.0 + u_ts[n,j,i]/ustar[j,i])*(1. - (u_ts[n,j,i]**2)/(ustar[j,i]**2))
-            else:
-              salt[j,i] = 0.0
-
-            # Calculate total vertical mass flux (note beta has units of m^-1)
-            # Beta acts to tone down dust in areas with so few dust-sized particles
-            # that the lofting efficiency decreases.  Otherwise, super sandy zones
-            # would be huge dust producers, which is generally not the case.
-            # Equation derived from wind-tunnel experiments (see MB95).
-
-            beta=10**(13.6*massfrac[0,j,i]-6.0)  # (unitless)
-            if (beta > betamax):
-              beta=betamax
-
-            emit[j,i]=emit[j,i]+salt[j,i]*(erod[j,i]**gamma)*alpha*beta    # (kg m^-2 sec-1)
+              u_ts[n,j,i] = u_ts0[n,j,i]
           else:
-            u_ts0[n,j,i]=0
+            if (gravsm[j,i] > drylimit[j,i]):
+              u_ts[n,j,i] = max(0.0,u_ts0[n,j,i]*np.sqrt(1.0+1.21*(gravsm[j,i]-drylimit[j,i])**0.68))
+            else:
+              u_ts[n,j,i] = u_ts0[n,j,i]
+
+          # Saltation flux (kg m^-1 s^-1) from MB95
+          # ds_rel is the relative surface area distribution
+
+          if ((ustar[j,i] > u_ts[n,j,i]) and (erod[j,i] > 0.0) and (ilwi[j,i]==1.0)):
+            salt[j,i] = cmb*ds_rel[n,j,i]*(airden[j,i]/g0)*(ustar[j,i]**3)*(1.0 + u_ts[n,j,i]/ustar[j,i])*(1. - (u_ts[n,j,i]**2)/(ustar[j,i]**2))
+          else:
+            salt[j,i] = 0.0
+
+          # Calculate total vertical mass flux (note beta has units of m^-1)
+          # Beta acts to tone down dust in areas with so few dust-sized particles
+          # that the lofting efficiency decreases.  Otherwise, super sandy zones
+          # would be huge dust producers, which is generally not the case.
+          # Equation derived from wind-tunnel experiments (see MB95).
+
+          beta=10**(13.6*massfrac[0,j,i]-6.0)  # (unitless)
+          if (beta > betamax):
+            beta=betamax
+
+          emit[j,i]=emit[j,i]+salt[j,i]*(erod[j,i]**gamma)*alpha*beta    # (kg m^-2 sec-1)
+        else:
+          u_ts0[n,j,i]=0
 
   return emit,u_ts,u_ts0

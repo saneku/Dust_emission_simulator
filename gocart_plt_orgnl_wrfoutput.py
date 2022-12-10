@@ -6,7 +6,7 @@ from datetime import datetime
 
 wrf_dir="./"
 wrf_out_file="wrfout_d01_2016-06-24_00:00:00_gocart"
-print wrf_dir+wrf_out_file
+print (wrf_dir+wrf_out_file)
 nc_fid = nc.MFDataset(wrf_dir+wrf_out_file)
 times =nc_fid.variables['Times'][:]
 

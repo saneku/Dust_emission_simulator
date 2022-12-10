@@ -3,36 +3,28 @@
 from utils import *
 import netCDF4 as nc
 import numpy as np
-import os
-
-#import matplotlib.pyplot as plt
-#atplotlib.use('Agg')
 from matplotlib import pyplot as plt
+import os
 
 from afwa_source_dust import afwa_source_dust
 from mpl_toolkits.basemap import Basemap
 from datetime import datetime
 
-wrf_out_file='/wrfout_d01_2016-06-24_00:00:00_afwa'
-print wrf_dir+wrf_out_file
+wrf_dir="./"
+wrf_out_file="/wrfout_d01_2016-06-24_00:00:00_afwa"
+print (wrf_dir+wrf_out_file)
 nc_fid = nc.MFDataset(wrf_dir+wrf_out_file)
 times =nc_fid.variables['Times'][:]
-xland=nc_fid.variables['XLAND'][0,:]
+xland=nc_fid.variables['XLAND'][:]
+
 ustar=nc_fid.variables['UST'][:]
 smois = nc_fid.variables["SMOIS"][:, 0, :]  # soil moisture of first level
 isltyp = nc_fid.variables["ISLTYP"][:]
+snowh = nc_fid.variables["SNOWH"][:]
+znt = nc_fid.variables["ZNT"][:]
 
-#volsm=nc_fid.variables['TOT_DUST'][:,20,:]
-#CHECK
-gravsm=nc_fid.variables['TOT_DUST'][:,24,:]
-
-#AIR DENsity can not
-airden=nc_fid.variables['TOT_DUST'][:,25,:]
-#airden = 1.0 / nc_fid.variables["ALT"][:, 0, :]
-
-
-erodtot=nc_fid.variables['TOT_DUST'][:,21,:]
-ilwi=nc_fid.variables['TOT_DUST'][:,23,:]
+airden = 1.0 / nc_fid.variables["ALT"][:, 0, :]
+erodtot = nc_fid.variables["EROD"][:] # Ginoux DSR, there is a DRI also
 
 massfrac=np.zeros(shape=(3,ny,nx))  #MASSFRAC  Fraction of mass in each of 3 soil classes    (clay, silt, sand)
 massfrac[0][:]=nc_fid.variables['CLAYFRAC'][0,:]
@@ -41,40 +33,31 @@ massfrac[2][:]=nc_fid.variables['SANDFRAC'][0,:]
 nc_fid.close()
 
 #print drylimit.shape, volsm.shape, erodtot.shape, ustar.shape, ilwi.shape, gravsm.shape, airden.shape, massfrac.shape  #(15, 44, 44)
-#print massfrac.shape 		#(3, 44, 44)
-#exit()
 
-emissions=np.zeros(shape=(ny,nx))
+flux=np.zeros(shape=(ny,nx))
 
 print "processing " +wrf_dir+wrf_out_file
 for time_idx in range(1,len(times),1):
-	print ''.join(times[time_idx])
-	#time_labels.append(''.join(times[time_idx]))
+
+	flux,u_ts,u_tres=afwa_source_dust(nx,ny,ustar[time_idx], massfrac,erodtot[time_idx], isltyp[time_idx], smois[time_idx], airden[time_idx],xland[time_idx],znt[time_idx],snowh[time_idx])
+	#flux (kg/m2/sec)
+	total_emission_flux=np.sum(surface*flux)
 
 	fig = plt.figure(figsize=(12,12))
 	ash_map = Basemap(**basemap_params)
 	x, y = ash_map(xlon,xlat)
-
 	decorateMap(ash_map)	
-	#plot_cities(ash_map)
 
 	date_time_obj = datetime.strptime(''.join(times[time_idx]), '%Y-%m-%d_%H:%M:%S')
-	
-	emissions,u_ts,u_tres=afwa_source_dust(nx,ny,ustar[time_idx], massfrac,erodtot[time_idx], ilwi[time_idx], isltyp[time_idx],gravsm[time_idx], smois[time_idx], airden[time_idx],xland)
-	
-	total_emission_flux=np.sum(surface*emissions)
 	plt.title(date_time_obj.strftime("%d %B, %H:%M %p")+"\n Total emission flux: "+"{:0.1f}".format(total_emission_flux)+" ($kg\ sec^{-1}$)")
 
-	cs=ash_map.pcolormesh(x,y,emissions,cmap=ncview_colormap_short, norm=ai_norm)
-	#cs=ash_map.contourf(x,y,emissions,cmap=ncview_colormap_short, norm=ai_norm)
-	#OR cs=ash_map.pcolormesh(x,y,emissions,norm=colors.LogNorm(1.0e-7, vmax=0.01))
+	cs=ash_map.pcolormesh(x,y,flux,cmap=ncview_colormap_short, norm=ai_norm)
+	cbar = fig.colorbar(cs,orientation='horizontal',extend='max',format='%.0e')
+	cbar.set_label('Instant. GOCART-AFWA Dust emissions, '+units)
 
-	cbar = fig.colorbar(cs,orientation='horizontal',extend='max')
-	cbar.set_label('GOCART-AFWA Dust emissions, '+units)#,fontsize=CB_LABEL_TEXT_SIZE)
+	plt.savefig("afwa_inst_flux_"+str(time_idx)+".png",bbox_inches="tight")
 
-	plt.savefig("afwa_flux_"+str(time_idx)+".png",bbox_inches="tight")
-
-	####################################################################################
+	print("".join(times[time_idx]),total_emission_flux)
 	####################################################################################
 	
 	'''

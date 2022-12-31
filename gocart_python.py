@@ -10,14 +10,13 @@ from gocart_source_dust import gocart_source_dust
 from mpl_toolkits.basemap import Basemap
 from datetime import datetime
 
-wrf_dir="./"
-wrf_out_file = "wrfout_d01_2016-06-24_00:00:00_gocart"
+wrf_dir="./data/"
+wrf_out_file = "gocart.nc"
 print(wrf_dir + wrf_out_file)
 nc_fid = nc.MFDataset(wrf_dir + wrf_out_file)
 times = nc_fid.variables["Times"][:]
 xland = nc_fid.variables["XLAND"][0, :]
 
-# ilwi=nc_fid.variables['TOT_DUST'][:,23,:]
 airden = 1.0 / nc_fid.variables["ALT"][:, 0, :]
 u10 = nc_fid.variables["U10"][:]
 v10 = nc_fid.variables["V10"][:]
@@ -29,31 +28,31 @@ nc_fid.close()
 
 flux = np.zeros(shape=(ny, nx))
 
+
+
 print("processing " + wrf_dir + wrf_out_file)
 for time_idx in range(1, len(times), 1):
-    
-    flux, u_ts, u_tres = gocart_source_dust(nx, ny, w10m[time_idx], isltyp[time_idx], smois[time_idx], erod[time_idx], airden[time_idx], xland)
+	flux, u_ts, u_tres = gocart_source_dust(nx, ny, w10m[time_idx], isltyp[time_idx], smois[time_idx], erod[time_idx], airden[time_idx], xland)
 	#flux (kg/m2/sec)
-    total_emission_flux = np.sum(surface*flux) #(kg/sec)
+	total_emission_flux = np.sum(surface*flux) #(kg/sec)
 
-    fig = plt.figure(figsize=(12, 12))
-    ash_map = Basemap(**basemap_params)
-    x, y = ash_map(xlon, xlat)
-    decorateMap(ash_map)
+	fig = plt.figure(figsize=(8, 8))
+	ash_map = Basemap(**basemap_params)
+	x, y = ash_map(xlon, xlat)
+	decorateMap(ash_map)
 
-    date_time_obj = datetime.strptime("".join(times[time_idx]), "%Y-%m-%d_%H:%M:%S")
-    plt.title(date_time_obj.strftime("%d %B, %H:%M %p") + "\n Integrated Instant. emission flux: " + "{:0.1f}".format(total_emission_flux) + " ($kg\ sec^{-1}$)")
+	date_time_obj = datetime.strptime(str(b"".join(times[time_idx])), "b'%Y-%m-%d_%H:%M:%S'")
+	plt.title(date_time_obj.strftime("%d %B, %H:%M %p") + "\n Integrated Instant. emission flux: " + "{:0.1f}".format(total_emission_flux) + " ($kg\ sec^{-1}$)")
 
-    cs = ash_map.pcolormesh(x, y, flux, cmap=ncview_colormap_short, norm=ai_norm)
-    cbar = fig.colorbar(cs, orientation="horizontal",extend='max',format='%.0e')
-    cbar.set_label("Instant. GOCART Dust emissions, " + units)
+	cs = ash_map.pcolormesh(x, y, flux, cmap=colmap, norm=ai_norm)
+	cbar = fig.colorbar(cs, orientation="horizontal",extend='max',format='%.0e')
+	cbar.set_label("Instant. GOCART Dust emissions, " + units)
 
-    plt.savefig("gocart_inst_flux_" + str(time_idx) + ".png", bbox_inches="tight")
+	plt.savefig("gocart_inst_flux_" + str(time_idx) + ".png", bbox_inches="tight")
 
-    print("".join(times[time_idx]),total_emission_flux)
-    ####################################################################################
+	print(date_time_obj.strftime("%d.%m.%Y, %H:%M:%S"),total_emission_flux)
 
-    """
+	"""
 	############################
 	DIAGNOSTIC
 	#plot u_ts_XXX's calculated by this script
@@ -64,7 +63,7 @@ for time_idx in range(1, len(times), 1):
 		axs[l].set_title('u_ts_'+str(l))
 	fig.colorbar(cs, ax=axs.ravel().tolist(),orientation='horizontal')
 	plt.savefig("uts_"+str(time_idx)+".png")
-	
+
 	#plot u_tres_XXX's calculated by this script
 	k=u_tres.shape[0]
 	fig, axs = plt.subplots(1, k,figsize=(k*5,5))
@@ -75,7 +74,6 @@ for time_idx in range(1, len(times), 1):
 	plt.savefig("u_tres_"+str(time_idx)+".png")
 	os.system('convert '+"u_tres_"+str(time_idx)+".png "+"uts_"+str(time_idx)+".png"+" -append "+"u_"+str(time_idx)+".png; rm "+"uts_"+str(time_idx)+".png "+"u_tres_"+str(time_idx)+".png")
 	"""
-    ############################
 
 
 """

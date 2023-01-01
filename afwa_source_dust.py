@@ -1,6 +1,4 @@
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')
 
 def afwa_source_dust(nx, ny, ustar, massfrac, erod,isltyp, smois, airden,xland,znt,snowh):
   reff_salt=np.array([0.71e-6,1.37e-6,2.63e-6,5.00e-6,9.50e-6,18.1e-6,34.5e-6,65.5e-6,125.0e-6])

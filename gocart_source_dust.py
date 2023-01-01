@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib
 
 
 def gocart_source_dust(nx, ny, w10m, isltyp, smois, erod, airden, xland):
@@ -26,7 +25,7 @@ def gocart_source_dust(nx, ny, w10m, isltyp, smois, erod, airden, xland):
     dsrc = np.zeros(shape=(nmx, ny, nx))
 
     # Threshold velocity as a function of the dust density and the diameter from Bagnold (1941)
-    for n in np.arange(0, nmx):  # Loop over saltation bins
+    for n in np.arange(0, nmx):  # Loop over dust bins
         den = den_dust[n] * 1.0e-3  # (g cm^-3)
         diam = 2.0 * reff_dust[n] * 1.0e2  # (cm)
         rhoa = airden * 1.0e-3  # (g cm^-3)

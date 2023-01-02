@@ -50,7 +50,7 @@ for time_idx in range(1,len(times),1):
 
 cbar = fig.colorbar(cs,ax=axes.ravel().tolist(),orientation="horizontal",extend='max',format='%.0e')
 cbar.set_label('Instant GOCART-AFWA Dust emissions, '+units)
-plt.savefig("afwa_inst_flux.png",bbox_inches="tight")
+plt.savefig("afwa_inst_flux.png",bbox_inches="tight",dpi=300)
 
 
 '''

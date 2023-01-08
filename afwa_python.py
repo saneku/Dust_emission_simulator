@@ -29,13 +29,15 @@ massfrac[1][:]=1-(nc_fid.variables['CLAYFRAC'][0,:]+nc_fid.variables['SANDFRAC']
 massfrac[2][:]=nc_fid.variables['SANDFRAC'][0,:]
 nc_fid.close()
 
+tuning_params = {'alpha':0.5,'gamma':1.0,'smtune':1.0,'ustune':1.0}
+
 k=len(times)
 fig, axes = plt.subplots(1, k,figsize=(k*6,6))
 
 print ("processing " +wrf_dir+wrf_out_file)
 for time_idx in range(1,len(times),1):
 
-	flux,u_ts,u_tres=afwa_source_dust(nx,ny,ustar[time_idx], massfrac,erodtot[time_idx], isltyp[time_idx], smois[time_idx], airden[time_idx],xland[time_idx],znt[time_idx],snowh[time_idx])
+	flux,u_ts,u_tres=afwa_source_dust(nx,ny,ustar[time_idx], massfrac,erodtot[time_idx], isltyp[time_idx], smois[time_idx], airden[time_idx],xland[time_idx],znt[time_idx],snowh[time_idx],**tuning_params)
 	#Computed flux (kg/m2/sec)
 	total_emission_flux=np.sum(surface*flux)  #(kg/sec)
 

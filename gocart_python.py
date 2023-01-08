@@ -24,12 +24,14 @@ airden = 1.0 / nc_fid.variables["ALT"][:, 0, :]
 xland = nc_fid.variables["XLAND"][0, :]
 nc_fid.close()
 
+tuning_params = {'C_factor':0.5}
+
 k=len(times)
 fig, axes = plt.subplots(1, k,figsize=(k*6,6))
 
 print("processing " + wrf_dir + wrf_out_file)
 for time_idx in np.arange(0, k):
-	flux, u_ts, u_tres = gocart_source_dust(nx, ny, w10m[time_idx], isltyp[time_idx], smois[time_idx], erod[time_idx], airden[time_idx], xland)
+	flux, u_ts, u_tres = gocart_source_dust(nx, ny, w10m[time_idx], isltyp[time_idx], smois[time_idx], erod[time_idx], airden[time_idx], xland,**tuning_params)
 	#Computed flux (kg/m2/sec)
 	total_emission_flux = np.sum(surface*flux) #(kg/sec)
 

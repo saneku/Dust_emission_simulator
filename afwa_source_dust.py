@@ -1,6 +1,6 @@
 import numpy as np
 
-def afwa_source_dust(nx, ny, ustar, massfrac, erod,isltyp, smois, airden,xland,znt,snowh):
+def afwa_source_dust(nx, ny, ustar, massfrac, erod,isltyp, smois, airden,xland,znt,snowh,**tuning_params):
   reff_salt=np.array([0.71e-6,1.37e-6,2.63e-6,5.00e-6,9.50e-6,18.1e-6,34.5e-6,65.5e-6,125.0e-6])
   den_salt=np.array([2500.,2650.,2650.,2650.,2650.,2650.,2650.,2650.,2650.])
   spoint=np.array([0,1,1,1,1,1,2,2,2])#  ! 0 Clay, 1 Silt, 2 Sand
@@ -13,11 +13,11 @@ def afwa_source_dust(nx, ny, ustar, massfrac, erod,isltyp, smois, airden,xland,z
   g0=9.8
   g = g0*1.0E2                          # (cm s^-2)  
   smx=9
-
-  alpha=0.5 # "AFWA Dust global tuning constant"    "m^-1"
-  gamma=1.0 # "AFWA Dust erodibility exponential tuning const" 
-  smtune=1.0 #"AFWA Dust soil moisture tuning constant"
-  ustune=1.0 # "AFWA Dust friction velocity tuning constant"    ""
+  
+  alpha=tuning_params.get('alpha')
+  gamma=tuning_params.get('gamma')
+  smtune=tuning_params.get('smtune')
+  ustune=tuning_params.get('ustune')
 
   erod=np.sum(erod,axis=0)
   volsm=np.zeros(shape=(ny,nx))

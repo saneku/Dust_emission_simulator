@@ -4,3 +4,4 @@ experiments/
 ncview_colormap/
 ._*
 .DS_Store
+.ipynb_checkpoints

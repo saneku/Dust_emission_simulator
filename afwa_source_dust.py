@@ -50,7 +50,7 @@ def afwa_source_dust(nx, ny, ustar, massfrac, erod,isltyp, smois, airden,xland,z
   else:
     # use drylimit based on gravimetric soil moisture
   '''
-  drylimit=14.0*massfrac[0]*massfrac[0]+17.0*massfrac[0]
+  drylimit=14.0*massfrac[0]*massfrac[0]+17.0*massfrac[0]  #! 0 Clay, 1 Silt, 2 Sand should have gravimetric SM units
 
 
   # Friction velocity tuning constant (Note: recommend 0.7 for PXLSM,
@@ -124,7 +124,7 @@ def afwa_source_dust(nx, ny, ustar, massfrac, erod,isltyp, smois, airden,xland,z
       # diameter from Bagnold (1941) (m s^-1).
 
       u_ts0[n] = 0.0013*(np.sqrt(den*g*diam/rhoa) * np.sqrt(1.0+0.006/(den*g*diam**2.5))) / (np.sqrt(1.928*(1331.0*diam**1.56+0.38)**0.092-1.0)) 
-
+      #cs=plt.pcolormesh(u_ts0[n]); plt.colorbar(cs); plt.title(f"{n}"); plt.savefig(f"./{n}.png")
       salt=np.zeros(shape=(ny,nx))
       for j in np.arange(0,ny):
         for i in np.arange(0,nx):

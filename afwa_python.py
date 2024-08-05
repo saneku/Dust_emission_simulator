@@ -15,12 +15,12 @@ print (wrf_dir+wrf_out_file)
 nc_fid = nc.MFDataset(wrf_dir+wrf_out_file)
 times =nc_fid.variables['Times'][:]
 xland=nc_fid.variables['XLAND'][:]
-ustar=nc_fid.variables['UST'][:]
-smois = nc_fid.variables["SMOIS"][:, 0, :]  # soil moisture of first level
-isltyp = nc_fid.variables["ISLTYP"][:]
+ustar=nc_fid.variables['UST'][:]				# m/s
+smois = nc_fid.variables["SMOIS"][:, 0, :]  	# volumetric soil moisture of first level
+isltyp = nc_fid.variables["ISLTYP"][:]			#min 1 max 15
 snowh = nc_fid.variables["SNOWH"][:]
-znt = nc_fid.variables["ZNT"][:]
-airden = 1.0 / nc_fid.variables["ALT"][:, 0, :]
+znt = nc_fid.variables["ZNT"][:]				#m
+airden = 1.0 / nc_fid.variables["ALT"][:, 0, :] #kg/m3
 erodtot = nc_fid.variables["EROD"][:] # Ginoux DSR, there is a DRI also
 
 massfrac=np.zeros(shape=(3,ny,nx))  #MASSFRAC  Fraction of mass in each of 3 soil classes    (clay, silt, sand)

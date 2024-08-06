@@ -22,14 +22,14 @@ def afwa_source_dust(nx, ny, ustar, massfrac, erod,isltyp, smois, airden,xland,z
   erod=np.sum(erod,axis=0)
   volsm=np.zeros(shape=(ny,nx))
   gravsm=np.zeros(shape=(ny,nx))
+  drylimit=np.zeros(shape=(ny,nx))
+  
 
   # Choose an LSM option and drylimit option.
   # Drylimit calculations based on look-up table in
   # Clapp and Hornberger (1978) for RUC and PXLSM and
   # Cosby et al. (1984) for Noah LSM.
 
-  smois_opt = 0
-  drylimit=np.zeros(shape=(ny,nx))
   '''
   dust_smois=0  
   if dust_smois == 1:
@@ -50,7 +50,19 @@ def afwa_source_dust(nx, ny, ustar, massfrac, erod,isltyp, smois, airden,xland,z
   else:
     # use drylimit based on gravimetric soil moisture
   '''
-  drylimit=14.0*massfrac[0]*massfrac[0]+17.0*massfrac[0]  #! 0 Clay, 1 Silt, 2 Sand should have gravimetric SM units
+
+  smois_opt = 2         #0 for gravimetric SM, 1 for volumetric SM, 2 for GOCART Simple
+
+  #use drylimit based on gravimetric soil moisture
+  if smois_opt==0:
+    drylimit=14.0*massfrac[0]*massfrac[0]+17.0*massfrac[0]  #! 0 Clay, 1 Silt, 2 Sand should have gravimetric SM units
+  # no substantial difference between Noah LSM scheme and RUCLSMSCHEME, PXLSMSCHEME schemes
+  #use drylimit based on volumetric soil moisture
+  if smois_opt==1:
+    #Noah LSM scheme
+    drylimit = 0.0756*(15.127*massfrac[0]+3.09)**2.3211   #! 0 Clay, 1 Silt, 2 Sand should have gravimetric SM units
+    #or RUCLSMSCHEME, PXLSMSCHEME   
+    #drylimit = 0.035 * (13.52 * massfrac[0] + 3.53)**2.68
 
 
   # Friction velocity tuning constant (Note: recommend 0.7 for PXLSM,
@@ -111,6 +123,7 @@ def afwa_source_dust(nx, ny, ustar, massfrac, erod,isltyp, smois, airden,xland,z
   u_ts0=np.zeros(shape=(smx,ny,nx))
   u_ts=np.zeros(shape=(smx,ny,nx))
   ilwi=np.zeros(shape=(ny,nx))
+  fecan=np.zeros(shape=(ny,nx))
 
   for n in np.arange(0,smx):            # Loop over saltation bins
       den = den_salt[n]*1.0e-3          # (g cm^-3)
@@ -121,7 +134,8 @@ def afwa_source_dust(nx, ny, ustar, massfrac, erod,isltyp, smois, airden,xland,z
       #print 1000*np.min(rhoa),1000*np.mean(rhoa),1000*np.max(rhoa)
 
       # Threshold friction velocity as a function of the dust density and
-      # diameter from Bagnold (1941) (m s^-1).
+      # diameter from ###Bagnold (1941) (m s^-1).
+      #from Marticorena and Bergametti (1995) eq.4.
 
       u_ts0[n] = 0.0013*(np.sqrt(den*g*diam/rhoa) * np.sqrt(1.0+0.006/(den*g*diam**2.5))) / (np.sqrt(1.928*(1331.0*diam**1.56+0.38)**0.092-1.0)) 
       #cs=plt.pcolormesh(u_ts0[n]); plt.colorbar(cs); plt.title(f"{n}"); plt.savefig(f"./{n}.png")
@@ -157,16 +171,38 @@ def afwa_source_dust(nx, ny, ustar, massfrac, erod,isltyp, smois, airden,xland,z
           # velocity (u_ts) will be equal to the dry threshold friction velocity
           # (u_ts0). EDH
 
+          #Use Gravimetric SM
+          if (smois_opt==0):
+            if (gravsm[j,i] > drylimit[j,i]):
+              u_ts[n,j,i] = max(0.0,u_ts0[n,j,i]*np.sqrt(1.0+1.21*(gravsm[j,i]-drylimit[j,i])**0.68))
+              fecan[j,i] = np.sqrt(1.0+1.21*(gravsm[j,i]-drylimit[j,i])**0.68)
+            else:
+              u_ts[n,j,i] = u_ts0[n,j,i]
+              fecan[j,i] = 1
+
+          #Use Volumetric SM
           if (smois_opt==1):
             if (100.0*volsm[j,i] > drylimit[j,i]):
               u_ts[n,j,i] = max(0.0,u_ts0[n,j,i]*np.sqrt(1.0+1.21*(100.0*volsm[j,i]-drylimit[j,i])**0.68))
+              fecan[j,i] = np.sqrt(1.0+1.21*(100.0*volsm[j,i]-drylimit[j,i])**0.68)
             else:
               u_ts[n,j,i] = u_ts0[n,j,i]
-          else:
-            if (gravsm[j,i] > drylimit[j,i]):
-              u_ts[n,j,i] = max(0.0,u_ts0[n,j,i]*np.sqrt(1.0+1.21*(gravsm[j,i]-drylimit[j,i])**0.68))
+              fecan[j,i] = 1        
+
+          #Simple GOCART variant
+          if (smois_opt==2):
+            #  volumetric soil moisture over porosity
+            gwet = volsm[j, i] / porosity[isltyp[j, i]]
+
+            # Case of surface dry enough to erode
+            if gwet < 0.5:
+              u_ts[n,j,i] = max(0.0,u_ts0[n,j,i]*(1.2+0.2*np.log10(max(0.001, gwet))))
+              fecan[j,i] = 1.2 + 0.2 * np.log10(max(0.001, gwet))
             else:
-              u_ts[n,j,i] = u_ts0[n,j,i]
+              # Case of wet surface, no erosion
+              u_ts[n, j, i] = 100
+              fecan[j,i] = 10
+
 
           # Saltation flux (kg m^-1 s^-1) from MB95
           # ds_rel is the relative surface area distribution

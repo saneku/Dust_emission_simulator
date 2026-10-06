@@ -157,7 +157,7 @@ def afwa_source_dust(nx, ny, ustar, massfrac, erod,isltyp, smois, airden,xland,z
 
           # Calculate volumetric and gravimetric soil moisture.            
           volsm[j, i]=max(smois[j, i]*smtune,0.0)
-          gravsm[j,i]=100.0*volsm[j, i]/((1.0-porosity[isltyp[j, i]])*(2.65*(1-massfrac[0,j,i])+2.50*massfrac[0,j,i]))
+          gravsm[j,i]=100.0*volsm[j, i]/((1.0-porosity[isltyp[j, i]-1])*(2.65*(1-massfrac[0,j,i])+2.50*massfrac[0,j,i]))
 
 
           # Friction velocity threshold correction function based on physical
@@ -181,18 +181,18 @@ def afwa_source_dust(nx, ny, ustar, massfrac, erod,isltyp, smois, airden,xland,z
               fecan[j,i] = 1
 
           #Use Volumetric SM
-          if (smois_opt==1):
+          elif (smois_opt==1):
             if (100.0*volsm[j,i] > drylimit[j,i]):
               u_ts[n,j,i] = max(0.0,u_ts0[n,j,i]*np.sqrt(1.0+1.21*(100.0*volsm[j,i]-drylimit[j,i])**0.68))
               fecan[j,i] = np.sqrt(1.0+1.21*(100.0*volsm[j,i]-drylimit[j,i])**0.68)
             else:
               u_ts[n,j,i] = u_ts0[n,j,i]
-              fecan[j,i] = 1        
+              fecan[j,i] = 1
 
           #Simple GOCART variant
-          if (smois_opt==2):
+          elif (smois_opt==2):
             #  volumetric soil moisture over porosity
-            gwet = volsm[j, i] / porosity[isltyp[j, i]]
+            gwet = volsm[j, i] / porosity[isltyp[j, i]-1]
 
             # Case of surface dry enough to erode
             if gwet < 0.5:
@@ -202,6 +202,9 @@ def afwa_source_dust(nx, ny, ustar, massfrac, erod,isltyp, smois, airden,xland,z
               # Case of wet surface, no erosion
               u_ts[n, j, i] = 100
               fecan[j,i] = 10
+
+          else:
+            raise ValueError(f"Unsupported smois_opt: {smois_opt}")
 
 
           # Saltation flux (kg m^-1 s^-1) from MB95
@@ -223,7 +226,5 @@ def afwa_source_dust(nx, ny, ustar, massfrac, erod,isltyp, smois, airden,xland,z
             beta=betamax
 
           emit[j,i]=emit[j,i]+salt[j,i]*(erod[j,i]**gamma)*alpha*beta    # (kg m^-2 sec-1)
-        else:
-          u_ts0[n,j,i]=0
 
   return emit,u_ts,u_ts0

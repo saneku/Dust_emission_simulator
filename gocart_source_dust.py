@@ -42,7 +42,7 @@ def gocart_source_dust(nx, ny, w10m, isltyp, smois, erod, airden, xland,**tuning
             for i in np.arange(0, nx):
                 if xland[j, i] < 1.5:
                     #  volumetric soil moisture over porosity
-                    gwet = smois[j, i] / porosity[isltyp[j, i]]
+                    gwet = smois[j, i] / porosity[isltyp[j, i]-1]
 
                     # Case of surface dry enough to erode
                     if gwet < 0.5:

@@ -3,10 +3,11 @@ from netCDF4 import Dataset
 from matplotlib import pyplot as plt
 import matplotlib.colors as colors
 from matplotlib import cm
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
 
 units='($kg\ m^{-2}\ s^{-1}$)'
 
-proj='lcc'
 cen_lat = 27.96201
 cen_lon = 42.022
 true_lat1 = 27.962
@@ -20,7 +21,14 @@ ny=44
 nyd=46
 nxd=46
 
-basemap_params = dict(width=dx*nxd,height=dy*nyd,resolution='l',area_thresh=100.,projection=proj, lat_1=true_lat1,lat_2=true_lat2,lat_0=cen_lat,lon_0=cen_lon)
+# Lambert Conformal projection matching the original Basemap ('lcc') setup.
+map_proj = ccrs.LambertConformal(central_longitude=cen_lon, central_latitude=cen_lat,
+                                  standard_parallels=(true_lat1, true_lat2))
+
+# Map extent (in projected meters), centered on (cen_lon, cen_lat), matching
+# the width/height Basemap used to draw.
+_x0, _y0 = map_proj.transform_point(cen_lon, cen_lat, ccrs.PlateCarree())
+map_extent = (_x0 - dx*nxd/2.0, _x0 + dx*nxd/2.0, _y0 - dy*nyd/2.0, _y0 + dy*nyd/2.0)
 
 wrf_input_file='grid.nc'
 wrf_dir='./data/'
@@ -49,19 +57,18 @@ MAPFAC_MY=wrfinput.variables['MAPFAC_MY'][0,:]
 surface=(dx/MAPFAC_MX)*(dy/MAPFAC_MY)       #surface in m2
 wrfinput.close()
 
-def decorateMap(m):
-    m.drawcoastlines(linewidth=0.8)
-    m.drawcountries(linewidth=0.2)
-    m.drawstates(linewidth=0.2)
+def decorateMap(ax):
+    ax.set_extent(map_extent, crs=map_proj)
 
-    parallels = np.arange(0.,90,10.)
-    m.drawparallels(parallels,labels=[1,0,0,0], linewidth=0.3,fontsize=10)
-    # draw meridians
-    meridians = np.arange(0.,180.,10.)
-    m.drawmeridians(meridians,labels=[0,0,0,1], linewidth=0.3,fontsize=10)
+    ax.coastlines(resolution='50m', linewidth=0.8)
+    ax.add_feature(cfeature.BORDERS, linewidth=0.2)
+    ax.add_feature(cfeature.STATES, linewidth=0.2)
+
+    gl = ax.gridlines(draw_labels=True, linewidth=0.3, color='gray', alpha=0.5, linestyle='--')
+    gl.top_labels = False
+    gl.right_labels = False
 
     #domain boundary
     wrf_lons=np.concatenate((xlon[:,0],xlon[ny-1,:],xlon[:,nx-1][::-1],xlon[0,:][::-1]), axis=0)
     wrf_lats=np.concatenate((xlat[:,0],xlat[ny-1,:],xlat[:,nx-1][::-1],xlat[0,:][::-1]), axis=0)
-    xx, yy = m(wrf_lons, wrf_lats)
-    m.plot(xx, yy, marker=None,color='brown')
+    ax.plot(wrf_lons, wrf_lats, marker=None, color='brown', transform=ccrs.PlateCarree())

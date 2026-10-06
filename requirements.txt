@@ -1,0 +1,7 @@
+numpy
+netCDF4
+matplotlib
+cartopy
+jupyter
+notebook
+ipywidgets

@@ -1,0 +1,12 @@
+name: dust-emission-simulator
+channels:
+  - conda-forge
+dependencies:
+  - python>=3.10
+  - numpy
+  - netcdf4
+  - matplotlib
+  - cartopy
+  - jupyter
+  - notebook
+  - ipywidgets

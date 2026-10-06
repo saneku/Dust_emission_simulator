@@ -9,21 +9,27 @@ Mimicking WRF-Chem's dust emission schemes outside of WRF-Chem itself: `dust_opt
 - `gocart_python.py` / `gocart_python.ipynb` — driver script/notebook that reads a WRF output file and runs `gocart_source_dust`.
 - `afwa_python.py` / `afwa_python.ipynb` — driver script/notebook that reads a WRF output file and runs `afwa_source_dust`.
 - `gocart_plt_orgnl_wrfoutput.py` / `afwa_plt_orgnl_wrfoutput.py` — plot the dust flux already present in the WRF output file (`DUST_EMIS` et al.) for comparison against the recomputed flux.
-- `utils.py` — shared grid/projection/plotting setup (domain size, Basemap projection, colormaps). Edit this file to match your own domain.
+- `utils.py` — shared grid/projection/plotting setup (domain size, cartopy projection, colormaps). Edit this file to match your own domain.
 - `data/` — expected location of input WRF netCDF files (`grid.nc`, `gocart.nc`, `afwa.nc`).
 
 ## Requirements
 
+Maps are rendered with [cartopy](https://scitools.org.uk/cartopy/). Install with conda (recommended — cartopy's GEOS/PROJ dependencies are easiest to get right this way):
+
 ```
-numpy
-netCDF4
-matplotlib
-basemap (mpl_toolkits.basemap)
+conda env create -f environment.yml
+conda activate dust-emission-simulator
+```
+
+or with pip:
+
+```
+pip install -r requirements.txt
 ```
 
 ## Usage
 
-1. Edit `utils.py` to match your WRF domain: grid size (`nx`, `ny`), projection parameters (`proj`, `cen_lat`, `cen_lon`, `true_lat1`, `true_lat2`, `dx`, `dy`), and `wrf_dir` (defaults to `./data/`).
+1. Edit `utils.py` to match your WRF domain: grid size (`nx`, `ny`), projection parameters (`cen_lat`, `cen_lon`, `true_lat1`, `true_lat2`, `dx`, `dy`), and `wrf_dir` (defaults to `./data/`).
 2. Place your WRF output netCDF file(s) in `data/` (e.g. `afwa.nc`, `gocart.nc`), containing at minimum: `UST`, `SMOIS`, `ISLTYP`, `SNOWH`, `ZNT`, `ALT`, `EROD`, `CLAYFRAC`, `SANDFRAC`, `XLAND`, `Times`.
 3. Run the notebook or script for the scheme you want:
    ```
